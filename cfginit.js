@@ -61,10 +61,9 @@ function cuMobilePile(document, callback) {
 }
 
 function insertMongo(document) {
-
     flags.insert(document, {safe: true}, function (err, result) {
         if (err) throw err;
-        //Logger.info("Insert| " + "VID: " + document.vid + " TMX: " + document.config.tmx)
+        Logger.info("Insert| " + "VID: " + document.vid + " TMX: " + document.config.tmx)
         objfile.splice(0, 1)
         searchFilePile(objfile)
 
@@ -73,11 +72,9 @@ function insertMongo(document) {
 
 }
 function updateMongo(document) {
-
     flags.update({vid: document.vid}, {$set: {"config.tmx": document.tmx}}, {upsert: true}, function (err, result) {
         if (err) throw err;
-        //Logger.info("Update| " + "VID: " + document.vid + " TMX: " + document.tmx)
-
+        Logger.info("Update| " + "VID: " + document.vid + " TMX: " + document.tmx)
         objfile.splice(0, 1)
         searchFilePile(objfile)
 
