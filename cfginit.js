@@ -13,6 +13,8 @@ var Logger = log4js.getLogger('configAuto');
 var MongoClient = require('mongodb').MongoClient
     , assert = require('assert');
 var url = 'mongodb://127.0.0.1:27017/pfc';
+var db;
+var flags
 
 //variaveis globais
 var mobile = {};
@@ -25,16 +27,20 @@ init();
 function init() {
 
     fs.readFile('log.log', 'utf8', function (err, source) {
-        objfile = JSON.parse(source);
-        searchFilePile(objfile)
+        MongoClient.connect(url, function (err, database) {
+            db = database;
+            flags = db.collection('flags')
+            objfile = JSON.parse(source);
+            searchFilePile(objfile)
+        })
     })
 }
 
 function searchFilePile(arrayfile) {
-    do  {
+    do {
         searchMobilePile(arrayfile[0], cuMobilePile)
         break;
-    }while(0 < arrayfile.length)
+    } while (0 < arrayfile.length)
 }
 
 
@@ -51,37 +57,30 @@ function searchMobilePile(filedocument, callback) {
 }
 function cuMobilePile(document, callback) {
     callback(document)
+    Logger.info(document)
 }
 
 function insertMongo(document) {
-    MongoClient.connect(url, function (err, db) {
-        assert.equal(null, err);
-        console.dir("Connected correctly to server");
-        db.collection('flags').insert(document, {safe: true}, function (err, result) {
-            if (err) throw err;
-            Logger.info("Insert| " + "VID: " + document.vid + " TMX: " + document.config.tmx)
-            db.close()
-            console.dir("Disconnected correctly to server");
-            objfile.splice(0, 1)
-            searchFilePile(objfile)
 
-        })
+    flags.insert(document, {safe: true}, function (err, result) {
+        if (err) throw err;
+        //Logger.info("Insert| " + "VID: " + document.vid + " TMX: " + document.config.tmx)
+        objfile.splice(0, 1)
+        searchFilePile(objfile)
+
     })
+
 
 }
 function updateMongo(document) {
-    MongoClient.connect(url, function (err, db) {
-        assert.equal(null, err);
-        console.dir("Connected correctly to server");
-        db.collection('flags').update({vid: document.vid}, {$set: {"config.tmx": document.tmx}}, {upsert: true}, function (err, result) {
-            if (err) throw err;
-            db.close()
-            Logger.info("Update| " + "VID: " + document.vid + " TMX: " + document.tmx)
-            console.dir("Disconnected correctly to server");
-            objfile.splice(0, 1)
-            searchFilePile(objfile)
 
-        })
+    flags.update({vid: document.vid}, {$set: {"config.tmx": document.tmx}}, {upsert: true}, function (err, result) {
+        if (err) throw err;
+        //Logger.info("Update| " + "VID: " + document.vid + " TMX: " + document.tmx)
+
+        objfile.splice(0, 1)
+        searchFilePile(objfile)
+
     })
 
 }
