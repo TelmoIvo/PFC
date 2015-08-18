@@ -23,33 +23,49 @@ var objfile;
 var ecoflag;
 var tmpflag;
 var casflag;
+var entrou = 0;
 
-//Iniciar funcao principal
-init();
+//Verificar se a @mobile está vazio, se estiver, vai à DB buscar os dados caso existem e só depois inicia a Inserção/Actualização
+//se @mobile não estiver vazio, inicia a Inserção/Actualização
+
+exports.checkDb = function() {
+    MongoClient.connect(url, function (err, database) {
+
+        db = database;
+        flags = db.collection('flags')
+        if (isEmpty(mobile) == true) {
+            dbToMemory()
+        }
+        else {
+            entrou = 1
+            init()
+        }
+        if (entrou < 1) {
+            init()
+        }
+    })
+}
+
 
 //Ler do ficheiro e enviar para searchFilePile para percorrer a pilha
 function init() {
 
     fs.readFile('log.log', 'utf8', function (err, source) {
-        MongoClient.connect(url, function (err, database) {
-            db = database;
-            flags = db.collection('flags')
-            objfile = JSON.parse(source);
-            searchFilePile(objfile)
+        objfile = JSON.parse(source);
+        searchFilePile(objfile)
 
-        })
     })
 }
 
 function searchFilePile(arrayfile) {
     while (arrayfile.length > 0) {
-        console.dir("Iterate")
-        searchMobilePile(arrayfile[0], cuMobilePile)
+       searchMobilePile(arrayfile[0], cuMobilePile)
         break;
     }
 }
 
 function searchMobilePile(filedocument, callback) {
+    console.dir("Iterate")
     console.dir("Search Mobile")
     if (!mobile[filedocument.vid]) {
         console.dir("Search Mobile - Non Existing")
@@ -97,6 +113,21 @@ function updateMongo(document) {
     })
 
 }
+function dbToMemory() {
+    console.dir("DB to memory")
+    flags.find({}, function (err, cursor) {
+        function handleItem(err, item) {
+            if (item == null) {
+                console.dir("DB to Memory iteration finished")
+                return;
+            }
+            mobile[item.vid] = item
+            cursor.nextObject(handleItem);
+        }
+
+        cursor.nextObject(handleItem);
+    })
+}
 
 function updateFlags(doc) {
     var existFlagEco = mobile[doc.vid].config.existFlagEco;
@@ -139,3 +170,11 @@ function updateFlags(doc) {
     var extend = _.extend(mobile[doc.vid].config, ecoflag, tmpflag, casflag, existFlagEco, existFlagTmp);
     return mobile[doc.vid];
 }
+
+function isEmpty(obj) {
+    for (var key in obj)
+        if (obj.hasOwnProperty(key))
+            return false;
+    return true;
+}
+
