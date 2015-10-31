@@ -1,0 +1,13 @@
+{
+  "countTmp": 10,
+  "TmpFlappingAlert": 0.2,	
+  "countTmpBlock": 1,
+  "DeltaTimeCas5": 900000,
+  "DeltaTimeCas5Flapping": 1800000,
+  "Cas5Ratio": 0.2,
+  "Cas11Flapping" : 4,
+  "countCas11Intermit": 3,
+  "Cas11fixo" : 3,
+  "Cas11EventoDifference" : 600000,
+  "Cas11FlappingDifference" : 840000
+}
