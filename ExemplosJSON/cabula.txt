@@ -1,0 +1,55 @@
+{//raiz do documento
+
+  "tmx" : “Data do registo”,
+
+  "vid" : “identificação unica da viatura”,
+
+  "dmx" : “Diferença em segundos entre o tmx e a receção do mesmo no servidor”,
+
+  "loc" : { //coordenadas
+
+    "lon" : “longitude em graus decimais”,
+
+    "lat" : “latitude em graus decimais”
+
+  },
+
+  "gsp" : “Velocidade em km/h”,
+
+  "hdg" : “Direção da viatura em graus”,
+
+  "gkm" : “Odometro da viatura em km”,
+
+  "cas" : “Causa/razão que deu origem à comunicação”
+
+  },
+
+  "_id" : “identificação única do documento na base de dados”
+
+}
+
+Exemplo de uma viatura com dados de temperatura:
+{//raiz
+   “tmx”:….,
+   …,
+  "exd" : { //extenção do documento
+    "tmp" : { //documento com registo da temperatura (até quatro sondas max)
+      "tid" :  “identificação única da sonda ou de termógrado”,
+      "tp1" : “registo da sonda 1 em graus centígrados”,
+      "tp2" : “sonda 2”
+     ….
+   }
+}
+
+Exemplo de uma viatura com dados de tacógrafo:
+{//raiz
+   “tmx”:….,
+   …,
+  "exd" : { //extenção do documento
+    "eco" : {
+      ….
+      "ds1" : “Estado do motorista na posição #1”,
+      "ds2" : “Estado do motorista na posição #2”
+    }
+}
+ 

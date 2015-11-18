@@ -8,15 +8,9 @@ var parameter = JSON.parse(parameters);
 
 //Avaliar o campo CAS dos registos
 exports.ramoCas = function (doc, mobile) {
-    //caso nao exista campo cas e memoria (acontece quando é um novo veiculo), cria-se um nested document com os valores iniciais das variaveis
+    //caso nao exista campo cas e memoria (acontece quando ï¿½ um novo veiculo), cria-se um nested document com os valores iniciais das variaveis
     if (mobile[doc.vid].config.cas == undefined) {
-        mobile[doc.vid].config.cas = {}
-        mobile[doc.vid].config.cas.countBlock5 = 0;
-        mobile[doc.vid].config.cas.countFlapping5 = 0;
-        mobile[doc.vid].config.cas.countIntermitente11 = 0;
-        mobile[doc.vid].config.cas.countFlapping11 = 0;
-        mobile[doc.vid].config.cas.tmxcas11Intermitente = []
-        mobile[doc.vid].config.cas.cas11Evento = []
+        mobile[doc.vid].config.cas = {};
 
 
     }
@@ -26,31 +20,32 @@ exports.ramoCas = function (doc, mobile) {
     }
 
        //Condi??o de verifica??o de restart do equipamento (cas 11)
-    if (doc.cas == 11) {
+    else if (doc.cas == 11) {
         causa11(doc, mobile);
-    }
-    //reset ao contador de causa 11 fixa
-    if (doc.cas != 11) {
-        mobile[doc.vid].config.cas.countBlock11 = 0;
     }
     //Condi??o de verifica??o o corte e o curto circuito de GPS (cas 13 e 14)
     else if ((doc.cas == 13 || doc.cas == 14) && mobile[doc.vid].config.ignON == true) {
         mobile[doc.vid].config.casflag = doc.cas
     }
-
+    else {
+        mobile[doc.vid].config.cas.countBlock11 = 0;
+    }
     //guardar o valor da variavel CAS
     mobile[doc.vid].config.casflag = doc.cas
 }
 
 /*
  @return - mobile[doc.vid].config.cas.countIntermitente5 e mobile[doc.vid].config.cas.countFlappingt5,
- valores do numero de casos 5 num espaço de tempo configuravel(Cas11EventoDifference) que lança um evento de intermitencia
- valor do numero de casos de evento de intermitencia num espaço de tempo configuravel (Cas11FlappingDifference) que lança uma anomalia de flapping
+ valores do numero de casos 5 num espaï¿½o de tempo configuravel(Cas11EventoDifference) que lanï¿½a um evento de intermitencia
+ valor do numero de casos de evento de intermitencia num espaï¿½o de tempo configuravel (Cas11FlappingDifference) que lanï¿½a uma anomalia de flapping
  */
 
 
 
 function causa5(doc, mobile) {
+    if(mobile[doc.vid].config.cas.contadorCas5Logs == undefined){
+        mobile[doc.vid].config.cas.contadorCas5Logs = 0;
+    }
    if(mobile[doc.vid].config.cas.contadorMov5 == undefined){
        mobile[doc.vid].config.cas.contadorMov5 = 0;
        mobile[doc.vid].config.cas.arrayMov5 = []
@@ -79,7 +74,7 @@ function causa5(doc, mobile) {
             mobile[doc.vid].config.cas.contadorEventoParked5 = 0;
         }
 
-        if(mobile[doc.vid].config.cas.contadorParked5 / mobile[doc.vid].config.countLogs >=parameter.Cas5Ratio){
+        if(mobile[doc.vid].config.cas.contadorParked5 / (mobile[doc.vid].config.countLogs - mobile[doc.vid].config.cas.contadorCas5Logs) >=parameter.Cas5Ratio){
             if(!mobile[doc.vid].config.cas.ArrayEventoParked5){
                 mobile[doc.vid].config.cas.ArrayEventoParked5 = []
             }
@@ -112,7 +107,7 @@ function causa5(doc, mobile) {
             mobile[doc.vid].config.cas.contadorEventoMov5 = 0;
         }
 
-        if(mobile[doc.vid].config.cas.contadorMov5 / mobile[doc.vid].config.countLogs >=parameter.Cas5Ratio){
+        if(mobile[doc.vid].config.cas.contadorMov5 / (mobile[doc.vid].config.countLogs - mobile[doc.vid].config.cas.contadorCas5Logs) >=parameter.Cas5Ratio){
            mobile[doc.vid].config.cas.ArrayEventoMov5[mobile[doc.vid].config.cas.contadorEventoMov5] = doc.tmx;
             var auxeventotmx = (mobile[doc.vid].config.cas.ArrayEventoMov5[mobile[doc.vid].config.cas.contadorEventoMov5].getTime()
             - mobile[doc.vid].config.cas.ArrayEventoMov5[0].getTime());
@@ -140,52 +135,52 @@ function causa5(doc, mobile) {
 
 /*
  @return - mobile[doc.vid].config.cas.countIntermitente5 e mobile[doc.vid].config.cas.countFlappingt5,
- valores do numero de casos 11 num espaço de tempo configuravel(Cas11EventoDifference) que lança um evento de intermitencia
- valor do numero de casos de evento de intermitencia num espaço de tempo configuravel (Cas11FlappingDifference) que lança uma anomalia de flapping
+ valores do numero de casos 11 num espaï¿½o de tempo configuravel(Cas11EventoDifference) que lanï¿½a um evento de intermitencia
+ valor do numero de casos de evento de intermitencia num espaï¿½o de tempo configuravel (Cas11FlappingDifference) que lanï¿½a uma anomalia de flapping
  */
 function causa11(doc, mobile) {
     mobile[doc.vid].config.cas.countBlock11 += 1;
-    //se o contador de casos para lançamento de eventos for igual a 0 ||
-    // o resto entre o numero de casos para lançamentos de eventos e o parametro de quantos casos de intermitencia são necessarios para o lançar o evento
+    //se o contador de casos para lanï¿½amento de eventos for igual a 0 ||
+    // o resto entre o numero de casos para lanï¿½amentos de eventos e o parametro de quantos casos de intermitencia sï¿½o necessarios para o lanï¿½ar o evento
     // for diferente de 0
     if (mobile[doc.vid].config.cas.countIntermitente11 == 0 || mobile[doc.vid].config.cas.countIntermitente11 % parameter.countCas11Intermit != 0) {
         //se o contador de casos for 0
         if (mobile[doc.vid].config.cas.countIntermitente11 == 0) {
-            // o array de casos guarda o tmx do documento actual na posicao 0 do array que é usado para comparação de datas
+            // o array de casos guarda o tmx do documento actual na posicao 0 do array que ï¿½ usado para comparaï¿½ï¿½o de datas
             mobile[doc.vid].config.cas.tmxcas11Intermitente[0] = mobile[doc.vid].config.tmx
             //e incrementa o contador
             mobile[doc.vid].config.cas.countIntermitente11 += 1
         }
         //se o contador for maior que 0
         if (mobile[doc.vid].config.cas.countIntermitente11 > 0) {
-            //compara a data do documento actual com a data que está na posição do array de comparação de datas a diferença for menor que
-            //a diferença estipulada no ficheiro de parametros, entra na condição se for menor ou igual
+            //compara a data do documento actual com a data que estï¿½ na posiï¿½ï¿½o do array de comparaï¿½ï¿½o de datas a diferenï¿½a for menor que
+            //a diferenï¿½a estipulada no ficheiro de parametros, entra na condiï¿½ï¿½o se for menor ou igual
             if (mobile[doc.vid].config.tmx - mobile[doc.vid].config.cas.tmxcas11Intermitente[0] <= parameter.Cas11EventoDifference) {
-                //guarda o tmx do documento actual na posiçao do array com o index = ao valor do contador de intermitencia
+                //guarda o tmx do documento actual na posiï¿½ao do array com o index = ao valor do contador de intermitencia
                 mobile[doc.vid].config.cas.tmxcas11Intermitente[mobile[doc.vid].config.cas.countIntermitente11] = mobile[doc.vid].config.tmx;
                 //incrementa o contador
                 mobile[doc.vid].config.cas.countIntermitente11 += 1
             }
             //se a diferenca for maior
             else {
-                //retira a cabeça do array
+                //retira a cabeï¿½a do array
                 mobile[doc.vid].config.cas.tmxcas11Intermitente.shift()
-                // e o contador é igual ao tamanho do array
+                // e o contador ï¿½ igual ao tamanho do array
                 mobile[doc.vid].config.cas.countIntermitente11 = mobile[doc.vid].config.cas.tmxcas11Intermitente.length;
             }
         }
     }
     //se o contador tiver valor diferente de 0
-    // o resto entre o numero de casos para lançamentos de eventos e o parametro de quantos casos de intermitencia são necessarios para o lançar o evento
+    // o resto entre o numero de casos para lanï¿½amentos de eventos e o parametro de quantos casos de intermitencia sï¿½o necessarios para o lanï¿½ar o evento
     // for igual 0
     if (mobile[doc.vid].config.cas.countIntermitente11 != 0 && mobile[doc.vid].config.cas.countIntermitente11 % parameter.countCas11Intermit == 0) {
-        //se a data actual menos o valor do array na posicao 0 for menor ou igual ao parametro de tempo para lançar o evento
+        //se a data actual menos o valor do array na posicao 0 for menor ou igual ao parametro de tempo para lanï¿½ar o evento
         if ((mobile[doc.vid].config.tmx).getTime() - mobile[doc.vid].config.cas.tmxcas11Intermitente[0].getTime() <= parameter.Cas11EventoDifference) {
             //se o contador de flapping for maior que 0
             if (mobile[doc.vid].config.cas.countFlapping11 > 0) {
-                //se a diferenca entre tmx actual com o tmx do evento na posição 0 do array de eventos for menor que o parametro de tempo para flapping
+                //se a diferenca entre tmx actual com o tmx do evento na posiï¿½ï¿½o 0 do array de eventos for menor que o parametro de tempo para flapping
                 if ((mobile[doc.vid].config.tmx).getTime() - (mobile[doc.vid].config.cas.cas11Evento[0]).getTime() <= parameter.Cas11FlappingDifference) {
-                    //guarda o tmx do evento na posiçao com o index igual ao valor do contador de flapping
+                    //guarda o tmx do evento na posiï¿½ao com o index igual ao valor do contador de flapping
                     mobile[doc.vid].config.cas.cas11Evento[mobile[doc.vid].config.cas.countFlapping11] = mobile[doc.vid].config.tmx;
                     //incrementa o contador de flapping
                     mobile[doc.vid].config.cas.countFlapping11 += 1;

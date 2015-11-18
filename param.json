@@ -5,6 +5,11 @@
   "DeltaTimeCas5": 900000,
   "DeltaTimeCas5Flapping": 1800000,
   "Cas5Ratio": 0.2,
+
+  "DeltaTimeTmp": 1800000,
+  "DeltaTimeTmpFlapping": 3600000,
+  "TmpRatio": 0.4,
+
   "Cas11Flapping" : 4,
   "countCas11Intermit": 3,
   "Cas11fixo" : 3,

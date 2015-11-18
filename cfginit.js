@@ -6,8 +6,6 @@ var tree = require('./arvore.js')
 
 //variaveis Listener
 //var Listener = require ('./listener.js')
-//variaveis Async
-var async = require('async')
 
 //variaveis Logs
 var log4js = require('log4js');
@@ -16,8 +14,7 @@ var Logger = log4js.getLogger('configAuto');
 var LoggerHistorico = log4js.getLogger('history');
 
 //variaveis MongoDB
-var MongoClient = require('mongodb').MongoClient
-    , assert = require('assert');
+var MongoClient = require('mongodb').MongoClient;
 var url = 'mongodb://127.0.0.1:27017/pfc';
 var db;
 var flags;
@@ -36,6 +33,15 @@ var parameter = JSON.parse(parameters);
 //dbacess = 1 - significa que nao precisa de aceder a base de dados, e assim evita max stack exceeded error
 var dbacess = 0;
 
+
+//Ler do ficheiro e enviar para searchFilePile para percorrer a pilha
+function init() {
+    fs.readFile('log.log', 'utf8', function (err, source) {
+        objfile = JSON.parse(source);
+        searchFilePile(objfile);
+    })
+}
+
 //Verificar se a @mobile est� vazio, se estiver, vai � DB buscar os dados caso existem e s� depois inicia a Inser��o/Actualiza��o
 //se @mobile n�o estiver vazio, inicia a Inser��o/Actualiza��o
 exports.checkDb = function () {
@@ -52,13 +58,6 @@ exports.checkDb = function () {
     })
 }
 
-//Ler do ficheiro e enviar para searchFilePile para percorrer a pilha
-function init() {
-    fs.readFile('log.log', 'utf8', function (err, source) {
-        objfile = JSON.parse(source);
-        searchFilePile(objfile);
-    })
-}
 
 //Ver a cabe�a da pilha dos documentos do ficheiro/stream recursivamente.
 function searchFilePile(arrayfile) {
@@ -116,7 +115,9 @@ function cuMobilePile(document, callback) {
 //Insert na BD
 function insertMongo(document) {
     flags.insert(document, {safe: true}, function (err, result) {
-        if (err) throw err;
+        if (err) {
+            throw err;
+        }
         Logger.info("Insert| " + JSON.stringify(document.vid) + " " + JSON.stringify(document.config.tmx));
         objfile.shift();
         searchFilePile(objfile);
@@ -126,7 +127,9 @@ function insertMongo(document) {
 //Update na BD
 function updateMongo(document) {
     flags.update({vid: document.vid}, document, {upsert: true}, function (err, result) {
-        if (err) throw err;
+        if (err){
+            throw err;
+        }
         Logger.info("Update| " + JSON.stringify(document.vid) + " " + JSON.stringify(document.config.tmx));
         objfile.shift();
         searchFilePile(objfile);
@@ -140,8 +143,9 @@ function dbToMemory(callback) {
             if (item == null) {
                 return callback();
             }
-            if (mobile[item.vid] != item)
+            if (mobile[item.vid] != item) {
                 mobile[item.vid] = item;
+            }
             cursor.nextObject(handleItem);
         }
 
@@ -151,21 +155,23 @@ function dbToMemory(callback) {
 
 //verificar se a mem�ria est� vazia
 function isEmpty(obj) {
-    for (var key in obj)
-        if (obj.hasOwnProperty(key))
+    for (var key in obj) {
+        if (obj.hasOwnProperty(key)) {
             return false;
+        }
+    }
     return true;
 }
 
 //call da arvore
 function arvore(filedocument, mobile) {
-    tree.ramoGPS(filedocument, mobile)
-    tree.ramoCas(filedocument, mobile)
-    tree.ramoEco(filedocument, mobile)
-    tree.ramoCANB(filedocument, mobile)
-    tree.ramoTmp(filedocument, mobile)
+    tree.ramoGPS(filedocument, mobile);
+    tree.ramoCas(filedocument, mobile);
+    tree.ramoEco(filedocument, mobile);
+    tree.ramoCANB(filedocument, mobile);
+    tree.ramoTmp(filedocument, mobile);
 
-    return mobile[filedocument.vid]
+    return mobile[filedocument.vid];
 }
 
 //Procura por anomalias e Insere no historico
@@ -175,110 +181,46 @@ function insertHistory(doc) {
     aux.vid = mobile[doc.vid].vid
     aux.tmx = mobile[doc.vid].config.tmx
     aux.anomalia = "";
+    aux.comments = [];
     aux.cor = 0;
 
-/*
-   // if (mobile[doc.vid].config.tmp != undefined) {
+    if (mobile[doc.vid].config.tmp != undefined) {
+        for (var prop in mobile[doc.vid].config.tmp) {
+            if (mobile[doc.vid].config.tmp.hasOwnProperty(prop)) {
+                if (mobile[doc.vid].config.tmp.prop) {
+                    if (mobile[doc.vid].config.tmp.prop.TmpAnomaly == 1) {
+                        aux.anomalia += " ERRO TEMP: FALHA DE COMUNICACAO";
+                        mobile[doc.vid].config.tmp.prop.ArrayEventoTmp = [];
+                        mobile[doc.vid].config.tmp.prop.contadorEventoTmp = 0;
+                        mobile[doc.vid].config.tmp.prop.contadorTemp = [];
+                        mobile[doc.vid].config.tmp.prop.contador = 0;
+                        mobile[doc.vid].config.tmp.prop.TmpAnomaly = 0;
 
-     /*   if (mobile[doc.vid].config.tmp.tp1) {
+                        aux.Anom = 1;
+                        aux.cor += 1
+                    }
+                    if (mobile[doc.vid].config.tmp.prop.TmpFlappingAnomaly == 1) {
+                        aux.anomalia += " ERRO TEMP : FLAPPING "
+                        mobile[doc.vid].config.tmp.prop.ArrayEventoTmp = [];
+                        mobile[doc.vid].config.tmp.prop.contadorEventoTmp = 0;
+                        mobile[doc.vid].config.tmp.prop.contadorTemp = [];
+                        mobile[doc.vid].config.tmp.prop.contador = 0;
+                        mobile[doc.vid].config.tmp.prop.TmpFlappingAnomaly = 0;
+                        aux.Anom = 1;
+                        aux.cor += 1
+                    }
+                    if (mobile[doc.vid].config.tmp.prop.tmp && ([127.9, 85, 200, -273.5, -500, -100].indexOf(mobile[doc.vid].config.tmp.prop.tmp) > -1)) {
+                        aux.anomalia += "ERRO " + prop + ": TEMPERATURE ERROR";
+                        aux.Anom = 1;
+                        aux.cor += 5
+                        auxhis += 1;
+                    }
+                }
+            }
+        }
+    }
 
-            if (mobile[doc.vid].config.tmp.tp1.countBlock == parameter.countTmpBlock) {
-                aux.anomalia.tp1 = "ERRO TP1: NO READING"
-                aux.cor += 1
-                auxhis += 1;
-            }
-
-            if (mobile[doc.vid].config.countLogs % parameter.countTmp == 0) {
-                if ((mobile[doc.vid].config.tmp.tp1.countFlapping / parameter.countTmp) >= parameter.TmpFlappingAlert) {
-                    aux.anomalia.tp1Int = "ERRO TP1 : FLAPPING"
-                    aux.cor += 3
-                    auxhis += 1;
-                    mobile[doc.vid].config.tmp.tp1.countFlapping = 0;
-                }
-                else {
-                    mobile[doc.vid].config.tmp.tp1.countFlapping = 0;
-                }
-            }
-            if (mobile[doc.vid].config.tmp.tp1.tmp && ([127.9, 85, 200, -273.5, -500, -100].indexOf(mobile[doc.vid].config.tmp.tp1.tmp) > -1)) {
-                aux.anomalia.tp1Int = "ERRO TP1 : TEMPERATURE ERROR"
-                aux.cor += 5
-                auxhis += 1;
-            }
-        }*/
-/*
-        if (mobile[doc.vid].config.tmp.tp2) {
-            if (mobile[doc.vid].config.tmp.tp2.countBlock == parameter.countTmpBlock) {
-                aux.anomalia.tp2 = " ERRO TP2: NO READING"
-                aux.cor += 1
-                auxhis = 1;
-            }
-            if (mobile[doc.vid].config.countLogs % parameter.countTmp == 0) {
-                if ((mobile[doc.vid].config.tmp.tp2.countFlapping / parameter.countTmp) >= parameter.TmpFlappingAlert) {
-                    aux.anomalia.tp2Int = "ERRO TP2 : FLAPPING"
-                    aux.cor += 3
-                    auxhis += 1;
-                    mobile[doc.vid].config.tmp.tp2.countFlapping = 0;
-                }
-                else {
-                    mobile[doc.vid].config.tmp.tp2.countFlapping = 0;
-                }
-            }
-            if (mobile[doc.vid].config.tmp.tp2.tmp && ([127.9, 85, 200, -273.5, -500, -100].indexOf(mobile[doc.vid].config.tmp.tp2.tmp) > -1)) {
-                aux.anomalia.tp2Int = "ERRO TP2 : TEMPERATURE ERROR"
-                aux.cor += 5
-                auxhis += 1;
-            }
-
-        }*/
-    /*    if (mobile[doc.vid].config.tmp.tp3) {
-            if (mobile[doc.vid].config.tmp.tp3.countBlock == parameter.countTmpBlock) {
-                aux.anomalia.tp3 = " ERRO TP3: NO READING"
-                aux.cor += 1
-                auxhis = 1;
-            }
-            if (mobile[doc.vid].config.countLogs % parameter.countTmp == 0) {
-                if ((mobile[doc.vid].config.tmp.tp3.countFlapping / parameter.countTmp) >= parameter.TmpFlappingAlert) {
-                    aux.anomalia.tp3Int = "ERRO TP3 : FLAPPING"
-                    aux.cor += 3
-                    auxhis += 1;
-                    mobile[doc.vid].config.tmp.tp3.countFlapping = 0;
-                }
-                else {
-                    mobile[doc.vid].config.tmp.tp3.countFlapping = 0;
-                }
-            }
-            if (mobile[doc.vid].config.tmp.tp3.tmp && ([127.9, 85, 200, -273.5, -500, -100].indexOf(mobile[doc.vid].config.tmp.tp3.tmp) > -1)) {
-                aux.anomalia.tp3Int = "ERRO TP3 : TEMPERATURE ERROR"
-                aux.cor += 5
-                auxhis += 1;
-            }
-        }*/
-        /*if (mobile[doc.vid].config.tmp.tp4) {
-            if (mobile[doc.vid].config.tmp.tp4.countBlock == parameter.countTmpBlock) {
-                aux.anomalia.tp4 = " ERRO TP4: NO READING"
-                aux.cor += 1
-                auxhis = 1;
-            }
-            if (mobile[doc.vid].config.countLogs % parameter.countTmp == 0) {
-                if ((mobile[doc.vid].config.tmp.tp4.countFlapping / parameter.countTmp) >= parameter.TmpFlappingAlert) {
-                    aux.anomalia.tp1Int = "ERRO TP4 : FLAPPING"
-                    aux.cor += 3
-                    auxhis += 1;
-                    mobile[doc.vid].config.tmp.tp4.countFlapping = 0;
-                }
-                else {
-                    mobile[doc.vid].config.tmp.tp4.countFlapping = 0;
-                }
-            }
-            if (mobile[doc.vid].config.tmp.tp4.tmp && ([127.9, 85, 200, -273.5, -500, -100].indexOf(mobile[doc.vid].config.tmp.tp4.tmp) > -1)) {
-                aux.anomalia.tp4Int = "ERRO TP4 : TEMPERATURE ERROR"
-                aux.cor += 5
-                auxhis += 1;
-            }
-        }*/
-  //  }
-
-    if(aux.anomalia.cas == undefined){
+    if (aux.anomalia.cas == undefined) {
         aux.anomalia.cas = "";
     }
 
@@ -289,64 +231,62 @@ function insertHistory(doc) {
             aux.cor += 1
         }
     }
-   if (mobile[doc.vid].config.cas != undefined) {
-           if( mobile[doc.vid].config.cas.Parkedcas5Anomaly == 1){
-           aux.anomalia += " ERRO CAS: CAS 5 FIXO - Veiculo Parado";
-           mobile[doc.vid].config.cas.Parkedcas5Anomaly = 0;
-           mobile[doc.vid].config.cas.ArrayEventoParked5 = [];
-           mobile[doc.vid].config.cas.contadorEventoParked5 = 0;
-           mobile[doc.vid].config.cas.arrayParked5.length = 0;
-           mobile[doc.vid].config.cas.contadorParked5 = 0;
-           aux.Anom = 1;
-           aux.cor += 1;
-           auxhis = 1;
-       }
-       if(  mobile[doc.vid].config.cas.Parkedcas5FlappingAnomaly  == 1){
-           aux.anomalia += " ERRO CAS: CAS 5 FLAPPING - Veiculo Parado";
-           mobile[doc.vid].config.cas.Parkedcas5FlappingAnomaly  = 0;
-           mobile[doc.vid].config.cas.ArrayEventoParked5 = [];
-           mobile[doc.vid].config.cas.contadorEventoParked5 = 0;
-           mobile[doc.vid].config.cas.arrayParked5.length = 0;
-           mobile[doc.vid].config.cas.contadorParked5 = 0;
-           aux.Anom = 1;
-           aux.cor += 1;
-           auxhis = 1;
-       }
-
-       if( mobile[doc.vid].config.cas.Movcas5Anomaly == 1){
-           aux.anomalia += " ERRO CAS: CAS 5 FIXO - Veiculo Movimento";
-           mobile[doc.vid].config.cas.Movcas5Anomaly = 0;
-           mobile[doc.vid].config.cas.ArrayEventoMov5 = [];
-           mobile[doc.vid].config.cas.contadorEventoMov5 = 0;
-           mobile[doc.vid].config.cas.arrayMov5.length = 0;
-           mobile[doc.vid].config.cas.contadorMov5 = 0;
-           aux.Anom = 1;
-           aux.cor += 1;
-           auxhis = 1;
-       }
-       if( mobile[doc.vid].config.cas.Movcas5FlappingAnomaly == 1){
-           aux.anomalia += " ERRO CAS: CAS 5 FLAPPING - Veiculo Movimento";
-           mobile[doc.vid].config.cas.Movcas5FlappingAnomaly = 0;
-           mobile[doc.vid].config.cas.ArrayEventoMov5 = [];
-           mobile[doc.vid].config.cas.contadorEventoMov5 = 0;
-           mobile[doc.vid].config.cas.arrayMov5.length = 0;
-           mobile[doc.vid].config.cas.contadorMov5 = 0;
-           aux.Anom = 1;
-           aux.cor += 1;
-           auxhis = 1;
-       }
-
-        if(mobile[doc.vid].config.cas.countBlock11 == parameter.Cas11fixo){
-            aux.anomalia += " Erro CAS : CAS 11 FIXO"
-            aux.cor += 1
+    if (mobile[doc.vid].config.cas != undefined) {
+        if (mobile[doc.vid].config.cas.Parkedcas5Anomaly == 1) {
+            aux.anomalia += " ERRO CAS: CAS 5 FIXO - Veiculo Parado";
+            mobile[doc.vid].config.cas.Parkedcas5Anomaly = 0;
+            mobile[doc.vid].config.cas.ArrayEventoParked5 = [];
+            mobile[doc.vid].config.cas.contadorEventoParked5 = 0;
+            mobile[doc.vid].config.cas.arrayParked5.length = 0;
+            mobile[doc.vid].config.cas.contadorParked5 = 0;
+            mobile[doc.vid].config.cas.contadorCas5Logs = mobile[doc.vid].config.countLogs;
+            aux.Anom = 1;
+            aux.cor += 1;
             auxhis = 1;
-            mobile[doc.vid].config.cas.countBlock11 = 0;
         }
+        if (mobile[doc.vid].config.cas.Parkedcas5FlappingAnomaly == 1) {
+            aux.anomalia += " ERRO CAS: CAS 5 FLAPPING - Veiculo Parado";
+            mobile[doc.vid].config.cas.Parkedcas5FlappingAnomaly = 0;
+            mobile[doc.vid].config.cas.ArrayEventoParked5 = [];
+            mobile[doc.vid].config.cas.contadorEventoParked5 = 0;
+            mobile[doc.vid].config.cas.arrayParked5.length = 0;
+            mobile[doc.vid].config.cas.contadorParked5 = 0;
+            mobile[doc.vid].config.cas.contadorCas5Logs = mobile[doc.vid].config.countLogs;
+            aux.Anom = 1;
+            aux.cor += 1;
+            auxhis = 1;
+        }
+
+        if (mobile[doc.vid].config.cas.Movcas5Anomaly == 1) {
+            aux.anomalia += " ERRO CAS: CAS 5 FIXO - Veiculo Movimento";
+            mobile[doc.vid].config.cas.Movcas5Anomaly = 0;
+            mobile[doc.vid].config.cas.ArrayEventoMov5 = [];
+            mobile[doc.vid].config.cas.contadorEventoMov5 = 0;
+            mobile[doc.vid].config.cas.arrayMov5.length = 0;
+            mobile[doc.vid].config.cas.contadorMov5 = 0;
+            mobile[doc.vid].config.cas.contadorCas5Logs = mobile[doc.vid].config.countLogs;
+            aux.Anom = 1;
+            aux.cor += 1;
+            auxhis = 1;
+        }
+        if (mobile[doc.vid].config.cas.Movcas5FlappingAnomaly == 1) {
+            aux.anomalia += " ERRO CAS: CAS 5 FLAPPING - Veiculo Movimento";
+            mobile[doc.vid].config.cas.Movcas5FlappingAnomaly = 0;
+            mobile[doc.vid].config.cas.ArrayEventoMov5 = [];
+            mobile[doc.vid].config.cas.contadorEventoMov5 = 0;
+            mobile[doc.vid].config.cas.arrayMov5.length = 0;
+            mobile[doc.vid].config.cas.contadorMov5 = 0;
+            mobile[doc.vid].config.cas.contadorCas5Logs = mobile[doc.vid].config.countLogs;
+            aux.Anom = 1;
+            aux.cor += 1;
+            auxhis = 1;
+        }
+
         if (mobile[doc.vid].config.cas.countIntermitente11 == parameter.countCas11Intermit) {
             aux.anomalia += " Erro CAS : CAS 11 FLAPPING"
             if (mobile[doc.vid].config.cas.countFlapping11 == parameter.Cas11Flapping) {
                 aux.anomalia.casFlapping = 1;
-                mobile[doc.vid].config.cas.tmxcas11Intermitente =[]
+                mobile[doc.vid].config.cas.tmxcas11Intermitente = []
                 mobile[doc.vid].config.cas.cas11Evento = []
                 mobile[doc.vid].config.cas.countFlapping11 = 0
                 mobile[doc.vid].config.cas.countIntermitente11 = 0
@@ -359,7 +299,7 @@ function insertHistory(doc) {
         }
     }
 
-    if(mobile[doc.vid].config.casflag == 13 || mobile[doc.vid].config.casflag == 13 ){
+    if (mobile[doc.vid].config.casflag == 13 || mobile[doc.vid].config.casflag == 13) {
         aux.anomalia += " ERRO CAS: CAS 13/14 FIXO"
         aux.cor += 5
         aux.Anom = 1;
@@ -367,26 +307,26 @@ function insertHistory(doc) {
     }
 
 
-        if (mobile[doc.vid].config.canb.canbAnomaly == true) {
-            aux.anomalia += " ERRO CanBus : Devia existir"
-            aux.cor += 5;
-            aux.Anom = 1;
-            auxhis = 1;
-        }
+    if (mobile[doc.vid].config.canb.canbAnomaly == true) {
+        aux.anomalia += " ERRO CanBus : Devia existir"
+        aux.cor += 5;
+        aux.Anom = 1;
+        auxhis = 1;
+    }
 
-        if (mobile[doc.vid].config.canb.ehrAnomaly == true) {
-            aux.anomalia += " ERRO CanBus : Erro Horas de Motor "
-            aux.cor += 5;
-            aux.Anom = 1;
-            auxhis = 1;
-        }
+    if (mobile[doc.vid].config.canb.ehrAnomaly == true) {
+        aux.anomalia += " ERRO CanBus : Erro Horas de Motor "
+        aux.cor += 5;
+        aux.Anom = 1;
+        auxhis = 1;
+    }
 
-        if (mobile[doc.vid].config.canb.ckmAnomaly == true) {
-            aux.anomalia += " ERRO CanBus : Erro CKM "
-            aux.cor += 5;
-            aux.Anom = 1;
-            auxhis = 1;
-        }
+    if (mobile[doc.vid].config.canb.ckmAnomaly == true) {
+        aux.anomalia += " ERRO CanBus : Erro CKM "
+        aux.cor += 5;
+        aux.Anom = 1;
+        auxhis = 1;
+    }
 
     if (mobile[doc.vid].config.canb.flvAnomaly == true) {
         aux.anomalia += " ERRO CanBus : Erro FLV "
@@ -395,8 +335,10 @@ function insertHistory(doc) {
         auxhis = 1;
     }
 
-    if (aux.cor > 0 && aux.cor < 3)
+    //Definicao de cor para nivel de alerta
+    if (aux.cor > 0 && aux.cor < 3) {
         aux.cor = "Amarelo";
+    }
     if (aux.cor > 2 && aux.cor < 5) {
         aux.cor = "Laranja"
     }
@@ -425,19 +367,18 @@ function noCommunication(mobile) {
     var keys = Object.keys(mobile);
     for (i in keys) {
         if (systemdate.getTime() - mobile[keys[i]].config.tmx.getTime() > 8900000000) {
-                    var aux = {};
-                    aux.vid = mobile[keys[i]].vid;
-                    aux.tmx = mobile[keys[i]].config.tmx;
-                    aux.anomalia = "";
-                    aux.cor = 0;
-                    aux.anomalia = " ERRO Comunicacao :Falha communicacao ";
-                    aux.cor = "Vermelho";
-                    aux.Anom = 1;
-                    console.dir(aux);
-                    insertHistoryMongoFunction(aux);
-                    return;
-                }
+            var aux = {};
+            aux.vid = mobile[keys[i]].vid;
+            aux.tmx = mobile[keys[i]].config.tmx;
+            aux.anomalia = "";
+            aux.cor = 0;
+            aux.anomalia = " ERRO Comunicacao :Falha communicacao ";
+            aux.cor = "Vermelho";
+            aux.Anom = 1;
+            insertHistoryMongoFunction(aux);
+            return;
         }
+    }
     return;
 }
 

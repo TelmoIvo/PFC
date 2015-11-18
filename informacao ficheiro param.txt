@@ -1,0 +1,3 @@
+countTmp -- de quantos em quantos logs, irá ser avaliada as condicoes da temperatura
+tmpFlappingAlert -- qual é o racio Flapping/CountTmp para lançar um alerta
+countTmpBlock -- quantos logs seguidos tem de esperar antes de lançar o alerta

@@ -12,9 +12,9 @@
             }
         },
         {
-            "category": "recovery ",
+            "category": "history",
             "type": "file",
-            "filename": "Logs/recovery.log",
+            "filename": "Logs/history.log",
             "pattern": "-yyyy-MM-dd",
             "layout": {
                 "type": "pattern",
