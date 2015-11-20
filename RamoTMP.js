@@ -69,6 +69,7 @@ function TempValidation(doc, obj) {
                     obj.config.tmp.prop.contador = 0;
                     obj.config.tmp.prop.contadorTemp = [];
                     obj.config.tmp.prop.TmpAnomaly = 0;
+                    obj.config.tmp.prop.counterTmp = 0;
                     obj.config.tmp.prop.TmpFlappingAnomaly = 0;
                 }
 
@@ -82,7 +83,7 @@ function TempValidation(doc, obj) {
                         obj.config.tmp.prop.ArrayEventoTmp = []
                     }
 
-                    if (obj.config.tmp.prop.contador / obj.config.countLogs >= parameter.TmpRatio) {
+                    if (obj.config.tmp.prop.contador / (obj.config.countLogs - obj.config.tmp.prop.counterTmp) >= parameter.TmpRatio) {
                         obj.config.tmp.prop.ArrayEventoTmp[obj.config.tmp.prop.contadorEventoTmp] = doc.tmx;
                         var auxeventotmx = (obj.config.tmp.prop.ArrayEventoTmp[obj.config.tmp.prop.contadorEventoTmp].getTime()
                         - obj.config.tmp.prop.ArrayEventoTmp[0].getTime());

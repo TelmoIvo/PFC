@@ -182,7 +182,7 @@ function insertHistory(doc) {
     aux.tmx = mobile[doc.vid].config.tmx
     aux.anomalia = "";
     aux.comments = [];
-    aux.cor = 0;
+    aux.color = 0;
 
     if (mobile[doc.vid].config.tmp != undefined) {
         for (var prop in mobile[doc.vid].config.tmp) {
@@ -195,9 +195,9 @@ function insertHistory(doc) {
                         mobile[doc.vid].config.tmp.prop.contadorTemp = [];
                         mobile[doc.vid].config.tmp.prop.contador = 0;
                         mobile[doc.vid].config.tmp.prop.TmpAnomaly = 0;
-
+                        mobile[doc.vid].config.tmp.prop.counterTmp = mobile[doc.vid].config.countLogs;
                         aux.Anom = 1;
-                        aux.cor += 1
+                        aux.color += 1
                     }
                     if (mobile[doc.vid].config.tmp.prop.TmpFlappingAnomaly == 1) {
                         aux.anomalia += " ERRO TEMP : FLAPPING "
@@ -206,13 +206,14 @@ function insertHistory(doc) {
                         mobile[doc.vid].config.tmp.prop.contadorTemp = [];
                         mobile[doc.vid].config.tmp.prop.contador = 0;
                         mobile[doc.vid].config.tmp.prop.TmpFlappingAnomaly = 0;
+                        mobile[doc.vid].config.tmp.prop.counterTmp = mobile[doc.vid].config.countLogs;
                         aux.Anom = 1;
-                        aux.cor += 1
+                        aux.color += 1
                     }
                     if (mobile[doc.vid].config.tmp.prop.tmp && ([127.9, 85, 200, -273.5, -500, -100].indexOf(mobile[doc.vid].config.tmp.prop.tmp) > -1)) {
                         aux.anomalia += "ERRO " + prop + ": TEMPERATURE ERROR";
                         aux.Anom = 1;
-                        aux.cor += 5
+                        aux.color += 5
                         auxhis += 1;
                     }
                 }
@@ -228,7 +229,7 @@ function insertHistory(doc) {
         if (mobile[doc.vid].config.gps.gpsAnomali) {
             aux.anomalia += " ERRO GPS : POSICAO FIXA ou 0.0 || "
             aux.Anom = 1;
-            aux.cor += 1
+            aux.color += 1
         }
     }
     if (mobile[doc.vid].config.cas != undefined) {
@@ -241,7 +242,7 @@ function insertHistory(doc) {
             mobile[doc.vid].config.cas.contadorParked5 = 0;
             mobile[doc.vid].config.cas.contadorCas5Logs = mobile[doc.vid].config.countLogs;
             aux.Anom = 1;
-            aux.cor += 1;
+            aux.color += 1;
             auxhis = 1;
         }
         if (mobile[doc.vid].config.cas.Parkedcas5FlappingAnomaly == 1) {
@@ -253,7 +254,7 @@ function insertHistory(doc) {
             mobile[doc.vid].config.cas.contadorParked5 = 0;
             mobile[doc.vid].config.cas.contadorCas5Logs = mobile[doc.vid].config.countLogs;
             aux.Anom = 1;
-            aux.cor += 1;
+            aux.color += 1;
             auxhis = 1;
         }
 
@@ -266,7 +267,7 @@ function insertHistory(doc) {
             mobile[doc.vid].config.cas.contadorMov5 = 0;
             mobile[doc.vid].config.cas.contadorCas5Logs = mobile[doc.vid].config.countLogs;
             aux.Anom = 1;
-            aux.cor += 1;
+            aux.color += 1;
             auxhis = 1;
         }
         if (mobile[doc.vid].config.cas.Movcas5FlappingAnomaly == 1) {
@@ -278,7 +279,7 @@ function insertHistory(doc) {
             mobile[doc.vid].config.cas.contadorMov5 = 0;
             mobile[doc.vid].config.cas.contadorCas5Logs = mobile[doc.vid].config.countLogs;
             aux.Anom = 1;
-            aux.cor += 1;
+            aux.color += 1;
             auxhis = 1;
         }
 
@@ -294,14 +295,14 @@ function insertHistory(doc) {
             }
 
             mobile[doc.vid].config.cas.countIntermitente11 = 0
-            aux.cor += 1
+            aux.color += 1
             auxhis = 1;
         }
     }
 
     if (mobile[doc.vid].config.casflag == 13 || mobile[doc.vid].config.casflag == 13) {
         aux.anomalia += " ERRO CAS: CAS 13/14 FIXO"
-        aux.cor += 5
+        aux.color += 5
         aux.Anom = 1;
         auxhis = 1;
     }
@@ -309,41 +310,41 @@ function insertHistory(doc) {
 
     if (mobile[doc.vid].config.canb.canbAnomaly == true) {
         aux.anomalia += " ERRO CanBus : Devia existir"
-        aux.cor += 5;
+        aux.color += 5;
         aux.Anom = 1;
         auxhis = 1;
     }
 
     if (mobile[doc.vid].config.canb.ehrAnomaly == true) {
         aux.anomalia += " ERRO CanBus : Erro Horas de Motor "
-        aux.cor += 5;
+        aux.color += 5;
         aux.Anom = 1;
         auxhis = 1;
     }
 
     if (mobile[doc.vid].config.canb.ckmAnomaly == true) {
         aux.anomalia += " ERRO CanBus : Erro CKM "
-        aux.cor += 5;
+        aux.color += 5;
         aux.Anom = 1;
         auxhis = 1;
     }
 
     if (mobile[doc.vid].config.canb.flvAnomaly == true) {
         aux.anomalia += " ERRO CanBus : Erro FLV "
-        aux.cor += 5;
+        aux.color += 5;
         aux.Anom = 1;
         auxhis = 1;
     }
 
-    //Definicao de cor para nivel de alerta
-    if (aux.cor > 0 && aux.cor < 3) {
-        aux.cor = "Amarelo";
+    //Definicao de color para nivel de alerta
+    if (aux.color > 0 && aux.color < 3) {
+        aux.color = "Yellow";
     }
-    if (aux.cor > 2 && aux.cor < 5) {
-        aux.cor = "Laranja"
+    if (aux.color > 2 && aux.color < 5) {
+        aux.color = "Orange"
     }
-    if (aux.cor > 4) {
-        aux.cor = "Vermelho"
+    if (aux.color > 4) {
+        aux.color = "Red"
     }
 
 
@@ -371,9 +372,9 @@ function noCommunication(mobile) {
             aux.vid = mobile[keys[i]].vid;
             aux.tmx = mobile[keys[i]].config.tmx;
             aux.anomalia = "";
-            aux.cor = 0;
+            aux.color = 0;
             aux.anomalia = " ERRO Comunicacao :Falha communicacao ";
-            aux.cor = "Vermelho";
+            aux.color = "Vermelho";
             aux.Anom = 1;
             insertHistoryMongoFunction(aux);
             return;
