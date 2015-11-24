@@ -22,6 +22,7 @@ var historico;
 
 //variaveis globais
 var mobile = {};
+var mobilehis = {};
 var doc;
 var objfile;
 
@@ -92,7 +93,7 @@ function searchMobilePile(filedocument, callback) {
         insertHistory(filedocument)
     }
 //se existir e for mais recente, actualiza em memoria e MongoDB
-    else if (mobile[filedocument.vid].config.tmx <= filedocument.tmx) {
+    else if (mobile[filedocument.vid].config.tmx < filedocument.tmx) {
         mobile[doc.vid].config.countLogs += 1;
         dbacess = 0;
         mobile[filedocument.vid].config.tmx = filedocument.tmx;
@@ -189,13 +190,14 @@ function insertHistory(doc) {
             if (mobile[doc.vid].config.tmp.hasOwnProperty(prop)) {
                 if (mobile[doc.vid].config.tmp.prop) {
                     if (mobile[doc.vid].config.tmp.prop.TmpAnomaly == 1) {
-                        aux.anomalia += " ERRO TEMP: FALHA DE COMUNICACAO";
+                        aux.anomalia += " ERRO TEMP "+prop+": FALHA DE COMUNICACAO";
                         mobile[doc.vid].config.tmp.prop.ArrayEventoTmp = [];
                         mobile[doc.vid].config.tmp.prop.contadorEventoTmp = 0;
                         mobile[doc.vid].config.tmp.prop.contadorTemp = [];
                         mobile[doc.vid].config.tmp.prop.contador = 0;
                         mobile[doc.vid].config.tmp.prop.TmpAnomaly = 0;
                         mobile[doc.vid].config.tmp.prop.counterTmp = mobile[doc.vid].config.countLogs;
+
                         aux.Anom = 1;
                         aux.color += 1
                     }
@@ -207,6 +209,7 @@ function insertHistory(doc) {
                         mobile[doc.vid].config.tmp.prop.contador = 0;
                         mobile[doc.vid].config.tmp.prop.TmpFlappingAnomaly = 0;
                         mobile[doc.vid].config.tmp.prop.counterTmp = mobile[doc.vid].config.countLogs;
+
                         aux.Anom = 1;
                         aux.color += 1
                     }
@@ -227,7 +230,7 @@ function insertHistory(doc) {
 
     if (mobile[doc.vid].config.gps != undefined) {
         if (mobile[doc.vid].config.gps.gpsAnomali) {
-            aux.anomalia += " ERRO GPS : POSICAO FIXA ou 0.0 || "
+            aux.anomalia += " ERRO GPS : POSICAO FIXA ou 0.0"
             aux.Anom = 1;
             aux.color += 1
         }
@@ -349,15 +352,42 @@ function insertHistory(doc) {
 
 
     if (auxhis == 1 || aux.Anom == 1) {
-        insertHistoryMongoFunction(aux)
+
+        findHistoryMongoFunction(aux);
+       // insertHistoryMongoFunction(aux)
         return;
     }
     return;
 }
-
 //Funcao insert para a coleccao @Historico
+function findHistoryMongoFunction(doc) {
+    historico.find({'vid': doc.vid, 'Anom':1}).toArray(function(err, item) {
+       if (typeof item[0] != 'undefined' && doc.color != 'Green') {
+            updateHistoryMongoFunction(doc);
+        } else if (item[0] == undefined) {
+            insertHistoryMongoFunction(doc)
+        }
+    });
+};
+
 function insertHistoryMongoFunction(doc) {
+    doc.countanom = 1;
     historico.insert(doc, {safe: true}, function (err, result) {
+        if (err) throw err;
+        LoggerHistorico.info("History| " + JSON.stringify(doc));
+    })
+}
+
+function updateHistoryMongoFunction(doc) {
+    historico.update({vid:doc.vid, anom:1},
+        {
+            $min:{tmx:doc.tmx},
+        $inc:{
+            countanom:1
+        }
+        }
+    ,
+        {safe: true}, function (err, result) {
         if (err) throw err;
         LoggerHistorico.info("History| " + JSON.stringify(doc));
     })
@@ -374,7 +404,7 @@ function noCommunication(mobile) {
             aux.anomalia = "";
             aux.color = 0;
             aux.anomalia = " ERRO Comunicacao :Falha communicacao ";
-            aux.color = "Vermelho";
+            aux.color = "Red";
             aux.Anom = 1;
             insertHistoryMongoFunction(aux);
             return;

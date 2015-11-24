@@ -1,5 +1,4 @@
 var cfg = require("./cfginit.js");
-var teste = require("./teste2.js")
 var async = require("async")
 
 
